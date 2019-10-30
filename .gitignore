@@ -1,0 +1,7 @@
+generated/
+__pycache__/
+
+# virtualenv folder
+social-network-diffusion
+
+.idea/
