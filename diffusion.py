@@ -5,12 +5,13 @@ import numpy as np
 
 
 class Diffusion:
-    def __init__(self, graph, ap_callback: callable, infection_probability_callback: callable,
+    def __init__(self, graph, ap_callback: callable, activation_callback: callable, infection_probability_callback: callable,
                  infection_callback: callable, starting_nodes_callback: callable, post_stage_callback=None):
         """
         :param graph: Network represented as Graph
         :param ap_callback: Function taking integer as argument which represents id of node and returns activation
                             probability of this node. Used as generator during initialization
+        :param activation_callback Function taking Node as argument, return if node is active in given stage
         :param infection_probability_callback: Function taking integer as argument which represents id of node
                                                 and returns infection probability of this node. Used as generator
                                                 during initialization
@@ -37,18 +38,21 @@ class Diffusion:
 
         self.post_stage_callback = post_stage_callback
 
+        self.activation_callback = activation_callback;
+
     def _update_activation_state(self):
         for i in self.G.nodes:
             if not self.G.nodes[i]["infected"]:
-                self.G.nodes[i]["active"] = np.random.randint(2, size=1)[0]
+                self.G.nodes[i]["active"] = self.activation_callback(self.G.nodes[i]) #
 
     def _propagate(self):
         it = nx.bfs_successors(self.G, 0)
         for v in it:
             if self.G.nodes[v[0]]["infected"]:
                 for u in v[1]:
-                    if self.infectionCallback(self.G.nodes[v[0]], self.G.nodes[u]):
-                        self.G.nodes[u]["infected_copy"] = True
+                    if self.G.nodes[u]["active"]:
+                        if self.infectionCallback(self.G.nodes[v[0]], self.G.nodes[u]):
+                            self.G.nodes[u]["infected_copy"] = True
 
         # iteration has ended, infection state can be updated
         for v in self.G.nodes:
@@ -88,3 +92,4 @@ def visualisation(diffusion, stages):
     layout = nx.spring_layout(diffusion.G)
     ani = animation.FuncAnimation(fig, update_visualisation, frames=stages, repeat=False, fargs=(layout, diffusion.G, ax, diffusion))
     plt.show()
+    #ani.save("test.gif", writer='imagemagick', fps=1)

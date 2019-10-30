@@ -1,9 +1,16 @@
 import diffusion as df
 import networkx as nx
+import numpy as np
 
 
 def activation_probability_generator(i):
     return .95  # 95%
+
+
+def activation_callback(n):
+    # n["ap"] -> probability of activation
+    # normal.random < n["ap"] ?
+    return np.random.randint(2, size=1)[0]
 
 
 def infection_probability_generator(i):
@@ -30,6 +37,6 @@ def post_stage_callback(G, stage):
 if __name__ == "__main__":
     size = 300
     G = nx.random_geometric_graph(size, 0.125)
-    diffusion = df.Diffusion(G, activation_probability_generator, infection_probability_generator, infection_callback,
-                             starting_nodes_callback, post_stage_callback)
+    diffusion = df.Diffusion(G, activation_probability_generator, activation_callback, infection_probability_generator,
+                             infection_callback, starting_nodes_callback, post_stage_callback)
     df.visualisation(diffusion, 10)
