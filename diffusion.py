@@ -2,10 +2,11 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib import animation
 import numpy as np
-
+from tqdm import tqdm
+from copy import deepcopy
 
 class Diffusion:
-    def __init__(self, graph, ap_callback: callable, activation_callback: callable, infection_probability_callback: callable,
+    def __init__(self, graph, mu_activ, sigma_activ, mu_infect, sigma_infect, ap_callback: callable, activation_callback: callable, infection_probability_callback: callable,
                  infection_callback: callable, starting_nodes_callback: callable, post_stage_callback=None):
         """
         :param graph: Network represented as Graph
@@ -31,8 +32,8 @@ class Diffusion:
         # this attribute stores infection state of pending iteration
         nx.set_node_attributes(self.G, values=False, name="infected_copy")
         for i in self.G:
-            self.G.nodes[i]["ap"] = ap_callback(i)  # activation probability
-            self.G.nodes[i]["ip"] = infection_probability_callback(i)  # infection probability
+            self.G.nodes[i]["ap"] = ap_callback(mu_activ, sigma_activ)  # activation probability
+            self.G.nodes[i]["ip"] = infection_probability_callback(mu_infect, sigma_infect)  # infection probability
         self.infectionCallback = infection_callback
         starting_nodes_callback(self.G)
 
@@ -81,6 +82,7 @@ def color(node):
 
 
 def update_visualisation(num, layout, G, ax, D):
+    print(num)
     ax.clear()
     random_colors = [color(G.nodes[i]) for i in G.nodes]
     nx.draw(G, pos=layout, node_color=random_colors, ax=ax, node_size=30)
@@ -92,4 +94,51 @@ def visualisation(diffusion, stages):
     layout = nx.spring_layout(diffusion.G)
     ani = animation.FuncAnimation(fig, update_visualisation, frames=stages, repeat=False, fargs=(layout, diffusion.G, ax, diffusion))
     plt.show()
-    #ani.save("test.gif", writer='imagemagick', fps=1)
+    ani.save("test.gif", writer='imagemagick', fps=1)
+
+
+def check_graph_performance(G, goal, attempts, stages, plateau_tolerance, mu_activ, sigma_activ, mu_infect, sigma_infect,
+                          activation_probability_generator, activation_callback, infection_probability_generator,
+                          infection_callback, starting_nodes_callback):
+    failures = 0
+    stages_finished = []
+    for _ in tqdm(range(attempts), desc="All attempts progress"):
+        diffusion = Diffusion(G, mu_activ, sigma_activ, mu_infect, sigma_infect, activation_probability_generator,
+                             activation_callback, infection_probability_generator, infection_callback,
+                             starting_nodes_callback)
+        result = _check_diffusion_on_goal(diffusion, goal, stages, plateau_tolerance)
+        if result is None:
+            failures += 1
+        else:
+            stages_finished.append(result)
+    failures_percentage = failures / attempts
+    average_stages_finished = np.mean(stages_finished)
+    return average_stages_finished, failures_percentage
+
+
+def _check_diffusion_on_goal(diffusion, goal, stages, plateau_tolerance):
+        plateau_amount = 0
+        last_infected_percentage = 0
+        for stage in range(stages):
+            diffusion.diffuse(stage)
+            infected_percentage = _get_infected_percentage(diffusion)
+            plateau_amount = _check_diffusion_progress(infected_percentage, last_infected_percentage, plateau_amount)
+            last_infected_percentage = infected_percentage
+            if plateau_amount > plateau_tolerance:
+                return None
+            if infected_percentage >= goal:
+                return stage
+
+
+def _check_diffusion_progress(infected_percentage, last_infected_percentage, plateau_amount):
+    if infected_percentage > last_infected_percentage:
+        plateau_amount = 0
+    else:
+        plateau_amount += 1
+    return plateau_amount
+
+
+def _get_infected_percentage(diffusion):
+    nodes_all = diffusion.G.number_of_nodes()
+    nodes_infected = len([node for node in diffusion.G.nodes(data='infected') if node[1] is True])
+    return nodes_infected / nodes_all
