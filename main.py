@@ -52,10 +52,10 @@ if __name__ == "__main__":
                              activation_callback, infection_probability_generator, infection_callback,
                              starting_nodes_callback, post_stage_callback)
     df.visualisation(diffusion=diffusion, stages=stages)
-    average_stages_finished, faliures_percentage = df.check_graph_performance(G, goal, attempts, stages_perfor, plateau_tolerance,
+    average_stages_finished, failures_percentage = df.check_graph_performance(G, goal, attempts, stages_perfor, plateau_tolerance,
                                                                             mu_activ, sigma_activ, mu_infect, sigma_infect,
                                                                             activation_probability_generator, activation_callback,
                                                                             infection_probability_generator, infection_callback,
                                                                             starting_nodes_callback)
-    print(average_stages_finished)
-    print(faliures_percentage)
+    print("\nAverage stages number needed to achieve goal percentage infections {}".format(average_stages_finished))
+    print("Percentage of attempts that didn't achieve  goal {}".format(failures_percentage))
