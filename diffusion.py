@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 import numpy as np
 from tqdm import tqdm
-from copy import deepcopy
+
 
 class Diffusion:
     def __init__(self, graph, mu_activ, sigma_activ, mu_infect, sigma_infect, ap_callback: callable, activation_callback: callable, infection_probability_callback: callable,
