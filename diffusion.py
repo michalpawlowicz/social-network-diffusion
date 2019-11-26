@@ -116,17 +116,17 @@ def check_graph_performance(G, goal, attempts, stages, plateau_tolerance, mu_act
 
 
 def _check_diffusion_on_goal(diffusion, goal, stages, plateau_tolerance):
-        plateau_amount = 0
-        last_infected_percentage = 0
-        for stage in range(stages):
-            diffusion.diffuse(stage)
-            infected_percentage = _get_infected_percentage(diffusion)
-            plateau_amount = _check_diffusion_progress(infected_percentage, last_infected_percentage, plateau_amount)
-            last_infected_percentage = infected_percentage
-            if plateau_amount > plateau_tolerance:
-                return None
-            if infected_percentage >= goal:
-                return stage
+    plateau_amount = 0
+    last_infected_percentage = 0
+    for stage in range(stages):
+        diffusion.diffuse(stage)
+        infected_percentage = _get_infected_percentage(diffusion)
+        plateau_amount = _check_diffusion_progress(infected_percentage, last_infected_percentage, plateau_amount)
+        last_infected_percentage = infected_percentage
+        if plateau_amount > plateau_tolerance:
+            return None
+        if infected_percentage >= goal:
+            return stage
 
 
 def _check_diffusion_progress(infected_percentage, last_infected_percentage, plateau_amount):
