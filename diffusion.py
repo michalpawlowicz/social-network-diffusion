@@ -82,7 +82,6 @@ def color(node):
 
 
 def update_visualisation(num, layout, G, ax, D):
-    print(num)
     ax.clear()
     random_colors = [color(G.nodes[i]) for i in G.nodes]
     nx.draw(G, pos=layout, node_color=random_colors, ax=ax, node_size=30)
@@ -94,7 +93,7 @@ def visualisation(diffusion, stages):
     layout = nx.spring_layout(diffusion.G)
     ani = animation.FuncAnimation(fig, update_visualisation, frames=stages, repeat=False, fargs=(layout, diffusion.G, ax, diffusion))
     plt.show()
-    ani.save("test.gif", writer='imagemagick', fps=1)
+    # ani.save("test.gif", writer='imagemagick', fps=1)
 
 
 def check_graph_performance(G, goal, attempts, stages, plateau_tolerance, mu_activ, sigma_activ, mu_infect, sigma_infect,
