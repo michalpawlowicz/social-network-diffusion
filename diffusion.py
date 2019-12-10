@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 
 class Diffusion:
-    def __init__(self, graph, mu_activ, sigma_activ, mu_infect, sigma_infect, ap_callback: callable, activation_callback: callable, infection_probability_callback: callable,
+    def __init__(self, graph, mu_activ, sigma_activ, mu_infect, sigma_infect, start_nodes_num, start_method, ap_callback: callable, activation_callback: callable, infection_probability_callback: callable,
                  infection_callback: callable, starting_nodes_callback: callable, post_stage_callback=None):
         """
         :param graph: Network represented as Graph
@@ -35,7 +35,7 @@ class Diffusion:
             self.G.nodes[i]["ap"] = ap_callback(mu_activ, sigma_activ)  # activation probability
             self.G.nodes[i]["ip"] = infection_probability_callback(mu_infect, sigma_infect)  # infection probability
         self.infectionCallback = infection_callback
-        starting_nodes_callback(self.G)
+        starting_nodes_callback(self.G, start_method, start_nodes_num)
 
         self.post_stage_callback = post_stage_callback
 
@@ -47,13 +47,13 @@ class Diffusion:
                 self.G.nodes[i]["active"] = self.activation_callback(self.G.nodes[i]) #
 
     def _propagate(self):
-        it = nx.bfs_successors(self.G, 0)
-        for v in it:
-            if self.G.nodes[v[0]]["infected"]:
-                for u in v[1]:
-                    if self.G.nodes[u]["active"]:
-                        if self.infectionCallback(self.G.nodes[v[0]], self.G.nodes[u]):
-                            self.G.nodes[u]["infected_copy"] = True
+        nodes = self.G.nodes
+        for node_num in nodes:
+            if self.G.nodes[node_num]["infected"]:
+                for neighbour in self.G[node_num]:
+                    if self.G.nodes[neighbour]["active"]:
+                        if self.infectionCallback(self.G.nodes[node_num], self.G.nodes[neighbour]):
+                            self.G.nodes[neighbour]["infected_copy"] = True
 
         # iteration has ended, infection state can be updated
         for v in self.G.nodes:
@@ -96,13 +96,13 @@ def visualisation(diffusion, stages):
     # ani.save("test.gif", writer='imagemagick', fps=1)
 
 
-def check_graph_performance(G, goal, attempts, stages, plateau_tolerance, mu_activ, sigma_activ, mu_infect, sigma_infect,
+def check_graph_performance(G, goal, attempts, stages, plateau_tolerance, mu_activ, sigma_activ, mu_infect, sigma_infect, start_nodes_num, start_method,
                           activation_probability_generator, activation_callback, infection_probability_generator,
                           infection_callback, starting_nodes_callback):
     failures = 0
     stages_finished = []
     for _ in tqdm(range(attempts), desc="All attempts progress"):
-        diffusion = Diffusion(G, mu_activ, sigma_activ, mu_infect, sigma_infect, activation_probability_generator,
+        diffusion = Diffusion(G, mu_activ, sigma_activ, mu_infect, sigma_infect, start_nodes_num, start_method, activation_probability_generator,
                              activation_callback, infection_probability_generator, infection_callback,
                              starting_nodes_callback)
         result = _check_diffusion_on_goal(diffusion, goal, stages, plateau_tolerance)
