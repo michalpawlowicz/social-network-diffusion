@@ -33,7 +33,7 @@ def starting_nodes_callback(G, start_method, n):
     elif start_method == 'betweenness':
         starting_nodes_by_betweenness_centrality(G, n)
     elif start_method == 'closeness':
-        starting_nodes_by_betweenness_centrality(G, n)
+        starting_nodes_by_closeness_centrality(G, n)
 
 
 def starting_nodes_by_closeness_centrality(G, n):
