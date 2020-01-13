@@ -30,6 +30,30 @@ def infection_callback(u, v):
 def starting_nodes_callback(G, start_method, n):
     if start_method == 'degree':
         starting_nodes_by_degree(G, n)
+    elif start_method == 'betweenness':
+        starting_nodes_by_betweenness_centrality(G, n)
+    elif start_method == 'closeness':
+        starting_nodes_by_betweenness_centrality(G, n)
+
+
+def starting_nodes_by_closeness_centrality(G, n):
+    # closeness centrality of a node is calculated as the sum of the length of the shortest paths between the node and all other nodes in the graph.
+    # infect first n nodes with the biggest closeness centrality
+    degrees = [(n, b) for n, b in nx.algorithms.closeness_centrality(G).items()]
+    degrees.sort(key=lambda node: node[1], reverse=True)
+    start_nodes = [best_node[0] for best_node in degrees[:n]]
+    for node_idx in start_nodes:
+        G.nodes[node_idx]["infected"] = True
+
+
+def starting_nodes_by_betweenness_centrality(G, n):
+    # Betweenness centrality measures how important a node is to the shortest paths through the network
+    # infect first n nodes with the biggest betweenness centrality
+    degrees = [(n, b) for n, b in nx.algorithms.betweenness_centrality(G).items()]
+    degrees.sort(key=lambda node: node[1], reverse=True)
+    start_nodes = [best_node[0] for best_node in degrees[:n]]
+    for node_idx in start_nodes:
+        G.nodes[node_idx]["infected"] = True
 
 
 def starting_nodes_by_degree(G, n):
@@ -57,7 +81,7 @@ if __name__ == "__main__":
     attempts = 100  # number of attempts taken into account for performance checking
     plateau_tolerance = 200  # maximum number of diffusions without progress before being treated as failure
     start_nodes_num = 5  # number of nodes that we want to infect in the beginning to start propagation
-    start_method = 'degree'  # name of starting point selection method AVAILABLE: 'degree'
+    start_method = 'degree'  # name of starting point selection method AVAILABLE: 'degree', 'betweenness', 'closeness'
     G = nx.random_geometric_graph(graph_size, 0.125)    # specified graph generation
     diffusion = df.Diffusion(G, mu_activ, sigma_activ, mu_infect, sigma_infect, start_nodes_num, start_method, activation_probability_generator,
                              activation_callback, infection_probability_generator, infection_callback,
