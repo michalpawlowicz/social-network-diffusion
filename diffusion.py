@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 
 class Diffusion:
-    def __init__(self, graph, mu_activ, sigma_activ, mu_infect, sigma_infect, start_nodes_num, start_method, ap_callback: callable, activation_callback: callable, infection_probability_callback: callable,
+    def __init__(self, graph, mu_activ, sigma_activ, mu_infect, sigma_infect, start_nodes_num, min_distance, start_method, ap_callback: callable, activation_callback: callable, infection_probability_callback: callable,
                  infection_callback: callable, starting_nodes_callback: callable, post_stage_callback=None):
         """
         :param graph: Network represented as Graph
@@ -35,7 +35,7 @@ class Diffusion:
             self.G.nodes[i]["ap"] = ap_callback(mu_activ, sigma_activ)  # activation probability
             self.G.nodes[i]["ip"] = infection_probability_callback(mu_infect, sigma_infect)  # infection probability
         self.infectionCallback = infection_callback
-        starting_nodes_callback(self.G, start_method, start_nodes_num)
+        starting_nodes_callback(self.G, start_method, start_nodes_num, min_distance)
 
         self.post_stage_callback = post_stage_callback
 
@@ -84,27 +84,34 @@ def color(node):
 def update_visualisation(num, layout, G, ax, D):
     ax.clear()
     random_colors = [color(G.nodes[i]) for i in G.nodes]
-    nx.draw(G, pos=layout, node_color=random_colors, ax=ax, node_size=30)
+    nx.draw(G, pos=layout, node_color=random_colors, ax=ax, node_size=30, with_labels=False)
+    plt.show()
     D.diffuse(num)
 
 
 def visualisation(diffusion, stages):
-    fig, ax = plt.subplots(figsize=(10, 10))
-    layout = nx.spring_layout(diffusion.G)
-    ani = animation.FuncAnimation(fig, update_visualisation, frames=stages, repeat=False, fargs=(layout, diffusion.G, ax, diffusion))
+    fig, ax = plt.subplots(figsize=(2.6, 2.6))
+    layout = nx.spring_layout(diffusion.G, seed = 2500)
+    ax.clear()
+    random_colors = [color(diffusion.G.nodes[i]) for i in diffusion.G.nodes]
+    nx.draw(diffusion.G, pos=layout, node_color=random_colors, ax=ax, node_size=20, with_labels=False)
+    # ani = animation.FuncAnimation(fig, update_visualisation, frames=1, repeat=False, fargs=(layout, diffusion.G, ax, diffusion))
+    plt.tight_layout()
     plt.show()
     # ani.save("test.gif", writer='imagemagick', fps=1)
 
 
-def check_graph_performance(G, goal, attempts, stages, plateau_tolerance, mu_activ, sigma_activ, mu_infect, sigma_infect, start_nodes_num, start_method,
+def check_graph_performance(G, goal, attempts, stages, plateau_tolerance, mu_activ, sigma_activ, mu_infect, sigma_infect, start_nodes_num, min_distance, start_method,
                           activation_probability_generator, activation_callback, infection_probability_generator,
                           infection_callback, starting_nodes_callback):
     failures = 0
     stages_finished = []
     for _ in tqdm(range(attempts), desc="All attempts progress"):
-        diffusion = Diffusion(G, mu_activ, sigma_activ, mu_infect, sigma_infect, start_nodes_num, start_method, activation_probability_generator,
+        diffusion = Diffusion(G, mu_activ, sigma_activ, mu_infect, sigma_infect, start_nodes_num, min_distance, start_method, activation_probability_generator,
                              activation_callback, infection_probability_generator, infection_callback,
                              starting_nodes_callback)
+        if _ == 1:
+            visualisation(diffusion=diffusion, stages=stages)
         result = _check_diffusion_on_goal(diffusion, goal, stages, plateau_tolerance)
         if result is None:
             failures += 1
